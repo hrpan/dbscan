@@ -13,8 +13,8 @@ const int nComp=4;
 
 double mean[nComp],var[nComp];
 
-double eps=0.5;
-int minPTS=500;
+const double eps=0.2;
+const int minPTS=500;
 
 const TString inputFileName = "../../data/reducedibd.root";
 const TString outputFileName = "./output/dbscan/out.root";
@@ -25,7 +25,6 @@ struct Point{
 	bool visited;
 	int nbhds;
 	int cluster;
-	float mindist;
 };
 
 vector<Point> pts;
@@ -37,27 +36,21 @@ void expandCluster(int p_idx,int curCluster,set<int> &nbhd);
 int main(){
 	TFile *f = new TFile(inputFileName,"READ");
 	TTree *tr = (TTree*)f->Get("ibdred");
-	tr->AddFriend("out",prescanFileName);
 	TFile *fout = new TFile(outputFileName,"RECREATE");
 	TTree *tr_out = new TTree("out","out");
 
 	int cluster,nbhds;
-	float mindist;
 
 	TBranch *cluster_br = tr_out->Branch("cluster",&cluster);
 	TBranch *nbhd_br = tr_out->Branch("nbhd",&nbhds);
-	TBranch *mindist_br = tr_out->Branch("mindist",&mindist);
 
 	float tmp[nComp];
-	float f_mindist;
 	int f_nbhd;
 
 	tr->SetBranchAddress("dist",tmp);
 	tr->SetBranchAddress("ep",tmp+1);
 	tr->SetBranchAddress("ed",tmp+2);
 	tr->SetBranchAddress("dt",tmp+3);
-	tr->SetBranchAddress("mindist",&f_mindist);
-	tr->SetBranchAddress("nbhd",&f_nbhd);
 
 
 	int n = tr->GetEntries();
@@ -65,8 +58,6 @@ int main(){
 
 	double sum[nComp]={};
 	double sumsq[nComp]={};
-	double sumdist=0;
-	int sumPTS=0;
 
 	for(int i=0;i<n;++i){
 		if(i%200000==0)
@@ -80,20 +71,11 @@ int main(){
 		}
 		p_tmp.visited=false;
 		p_tmp.cluster=-1;
-		p_tmp.mindist=f_mindist;	
-		p_tmp.nbhds=f_nbhd;
-		sumdist+=f_mindist;
-		sumPTS+=f_nbhd;
 		pts.push_back(p_tmp);
 	}
 	f->Close();
 	cout << "SUMMATION/POINT INITIALIZATION COMPLETE" << endl;
 	
-	//
-	//SET EPS AND minPTS
-	//
-	minPTS=sumPTS/n;	
-	eps=sumdist/n;
 
 	for(int i=0;i<nComp;++i){
 		mean[i]=sum[i]/n;
@@ -120,7 +102,6 @@ int main(){
 	for(int i=0;i<n;++i){
 		cluster=pts[i].cluster;
 		nbhds=pts[i].nbhds;
-		mindist=pts[i].mindist;
 		tr_out->Fill();
 	}
  
@@ -146,7 +127,6 @@ set<int> regionQuery(int p_idx){
 		if(i==p_idx) 
 			continue;
 		float dist = measure(pts[p_idx],pts[i]);
-		pts[p_idx].mindist = min(dist,pts[p_idx].mindist);
 		if(measure(pts[p_idx],pts[i])<eps)
 			nbhd.insert(i);
 	}

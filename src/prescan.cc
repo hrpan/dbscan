@@ -22,7 +22,6 @@ const TString outputFileName = "./output/prescan/prescan.root";
 
 struct Point{
 	float x[nComp];
-	int nbhds;
 	float mindist;
 };
 
@@ -30,7 +29,6 @@ vector<Point> pts;
 
 float measure(Point &p1, Point &p2);
 void distScan(int p_idx);
-void regionQuery(int p_idx);
 
 int main(){
 	TFile *f = new TFile(inputFileName,"READ");
@@ -86,23 +84,14 @@ int main(){
 	double mean_mindist=0;
 	for(int i=0;i<n;++i){
 		if(i%2000==0)
-			cout << "PRESCAN STAGE1(DIST) PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
+			cout << "PRESCAN DIST PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
 		distScan(i);
 		mean_mindist+=pts[i].mindist;
 	}
-	mean_mindist/=n;	
-	eps=mean_mindist;
 
-	for(int i=0;i<n;++i){
-		if(i%2000==0)
-			cout << "PRESCAN STAGE2(NBHD) PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
-		regionQuery(i);
-		
-	}
 		
 
 	for(int i=0;i<n;++i){
-		nbhds=pts[i].nbhds;
 		mindist=pts[i].mindist;
 		tr_out->Fill();
 	}
@@ -131,20 +120,5 @@ void distScan(int p_idx){
 }
 
 
-void regionQuery(int p_idx){
-	
-	int n = pts.size();
-
-	set<int> nbhd;
-
-	for(int i=0;i<n;++i){
-		if(i==p_idx) 
-			continue;
-		float dist = measure(pts[p_idx],pts[i]);
-		if(measure(pts[p_idx],pts[i])<eps)
-			nbhd.insert(i);
-	}
-	pts[p_idx].nbhds=nbhd.size();
-}
 
 	
