@@ -67,8 +67,6 @@ int main(){
 			sum[j]+=tmp[j];
 			sumsq[j]+=tmp[j]*tmp[j];
 		}
-		p_tmp.visited=false;
-		p_tmp.cluster=-1;
 		p_tmp.mindist=9999;	
 		pts.push_back(p_tmp);
 	}
