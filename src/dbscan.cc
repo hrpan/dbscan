@@ -89,8 +89,8 @@ int main(){
 			cout << "DBSCAN PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
 		if(!pts[i].visited){
 			pts[i].visited=1;
+			set<int> nbhd = regionQuery(i);
 			if(pts[i].nbhds>minPTS){
-				set<int> nbhd = regionQuery(i);
 			//cout << "	NEIGHBORHOODS:" << nb << endl;
 				expandCluster(i,curClust,nbhd);
 				curClust++;
@@ -145,10 +145,10 @@ void expandCluster(int p_idx,int curCluster,set<int> &nbhd){
 		if(!pts[idx].visited){
 			cout << "	Expanding inner cluster at:" << setw(6) << idx << " Remaining:" << setw(6) << nbhd.size() << endl;
 			pts[idx].visited=true;
-			if(pts[idx].nbhds>minPTS){
-				set<int> nbhd_tmp = regionQuery(idx);
+			set<int> nbhd_tmp = regionQuery(idx);
+			if(pts[idx].nbhds>minPTS)
 				nbhd.insert(nbhd_tmp.begin(),nbhd_tmp.end());		
-			}
+			
 		}
 		if(pts[idx].cluster==-1)
 			pts[idx].cluster=curCluster;
