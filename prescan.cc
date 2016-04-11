@@ -14,12 +14,11 @@ const int nComp=4;
 
 double mean[nComp],var[nComp];
 
-const double eps=0.5;
+double eps=0.5;
 //~0.2% N
-const int minPTS=500;
 
 const TString inputFileName = "../../data/reducedibd.root";
-const TString outputFileName = TString::Format("./output/prescan.root");
+const TString outputFileName = "./output/prescan/prescan.root";
 
 struct Point{
 	float x[nComp];
@@ -30,6 +29,7 @@ struct Point{
 vector<Point> pts;
 
 float measure(Point &p1, Point &p2);
+void distScan(int p_idx);
 void regionQuery(int p_idx);
 
 int main(){
@@ -82,14 +82,25 @@ int main(){
 
 	int curClust=1;
 
+
+	double mean_mindist=0;
 	for(int i=0;i<n;++i){
 		if(i%2000==0)
-			cout << "DBSCAN PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
+			cout << "PRESCAN STAGE1(DIST) PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
+		distScan(i);
+		mean_mindist+=pts[i].mindist;
+	}
+	mean_mindist/=n;	
+	eps=mean_mindist;
+
+	for(int i=0;i<n;++i){
+		if(i%2000==0)
+			cout << "PRESCAN STAGE2(NBHD) PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
 		regionQuery(i);
-		//cout << "	NEIGHBORHOODS:" << nb << endl;
 		
-	}	
-	
+	}
+		
+
 	for(int i=0;i<n;++i){
 		nbhds=pts[i].nbhds;
 		mindist=pts[i].mindist;
@@ -108,6 +119,18 @@ float measure(Point &p1,Point &p2){
 	return sqrt(dist);	
 }
 
+void distScan(int p_idx){
+	int n = pts.size();
+
+	for(int i=0;i<n;++i){
+		if(i==p_idx)
+			continue;
+		float dist = measure(pts[p_idx],pts[i]);
+		pts[p_idx].mindist = min(dist,pts[p_idx].mindist);
+	}
+}
+
+
 void regionQuery(int p_idx){
 	
 	int n = pts.size();
@@ -118,7 +141,6 @@ void regionQuery(int p_idx){
 		if(i==p_idx) 
 			continue;
 		float dist = measure(pts[p_idx],pts[i]);
-		pts[p_idx].mindist = min(dist,pts[p_idx].mindist);
 		if(measure(pts[p_idx],pts[i])<eps)
 			nbhd.insert(i);
 	}
