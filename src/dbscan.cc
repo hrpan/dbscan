@@ -13,7 +13,7 @@ const int nComp=4;
 
 double mean[nComp],var[nComp];
 
-const double eps=0.2;
+const double eps=0.3;
 const int minPTS=500;
 
 const TString inputFileName = "../../data/reducedibd.root";
@@ -45,7 +45,6 @@ int main(){
 	TBranch *nbhd_br = tr_out->Branch("nbhd",&nbhds);
 
 	float tmp[nComp];
-	int f_nbhd;
 
 	tr->SetBranchAddress("dist",tmp);
 	tr->SetBranchAddress("ep",tmp+1);
