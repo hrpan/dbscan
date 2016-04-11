@@ -1,7 +1,6 @@
 #include "TROOT.h"
 #include "TTree.h"
 #include "TFile.h"
-#include "TThread.h"
 #include<vector>
 #include<deque>
 #include<iostream>
@@ -14,12 +13,12 @@ const int nComp=4;
 
 double mean[nComp],var[nComp];
 
-const double eps=0.5;
-//~0.2% N
-const int minPTS=500;
+double eps=0.5;
+int minPTS=500;
 
 const TString inputFileName = "../../data/reducedibd.root";
-const TString outputFileName = TString::Format("./output/dbscan/out%d.root",minPTS);
+const TString outputFileName = "./output/dbscan/out.root";
+const TString prescanFileName = "./output/prescan/prescan.root";
 
 struct Point{
 	float x[nComp];
@@ -38,7 +37,7 @@ void expandCluster(int p_idx,int curCluster,set<int> &nbhd);
 int main(){
 	TFile *f = new TFile(inputFileName,"READ");
 	TTree *tr = (TTree*)f->Get("ibdred");
-
+	tr->AddFriend("out",prescanFileName);
 	TFile *fout = new TFile(outputFileName,"RECREATE");
 	TTree *tr_out = new TTree("out","out");
 
@@ -50,16 +49,24 @@ int main(){
 	TBranch *mindist_br = tr_out->Branch("mindist",&mindist);
 
 	float tmp[nComp];
+	float f_mindist;
+	int f_nbhd;
+
 	tr->SetBranchAddress("dist",tmp);
 	tr->SetBranchAddress("ep",tmp+1);
 	tr->SetBranchAddress("ed",tmp+2);
 	tr->SetBranchAddress("dt",tmp+3);
+	tr->SetBranchAddress("mindist",&f_mindist);
+	tr->SetBranchAddress("nbhd",&f_nbhd);
+
 
 	int n = tr->GetEntries();
 	cout << "TOTAL EVTS:" << n << endl;
 
 	double sum[nComp]={};
 	double sumsq[nComp]={};
+	double sumdist=0;
+	int sumPTS=0;
 
 	for(int i=0;i<n;++i){
 		if(i%200000==0)
@@ -73,12 +80,20 @@ int main(){
 		}
 		p_tmp.visited=false;
 		p_tmp.cluster=-1;
-		p_tmp.mindist=9999;	
+		p_tmp.mindist=f_mindist;	
+		p_tmp.nbhds=f_nbhd;
+		sumdist+=f_mindist;
+		sumPTS+=f_nbhd;
 		pts.push_back(p_tmp);
 	}
 	f->Close();
 	cout << "SUMMATION/POINT INITIALIZATION COMPLETE" << endl;
 	
+	//
+	//SET EPS AND minPTS
+	//
+	minPTS=sumPTS/n;	
+	eps=sumdist/n;
 
 	for(int i=0;i<nComp;++i){
 		mean[i]=sum[i]/n;
@@ -93,9 +108,9 @@ int main(){
 			cout << "DBSCAN PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
 		if(!pts[i].visited){
 			pts[i].visited=1;
-			set<int> nbhd = regionQuery(i);
+			if(pts[i].nbhds>minPTS){
+				set<int> nbhd = regionQuery(i);
 			//cout << "	NEIGHBORHOODS:" << nb << endl;
-			if(nbhd.size()>minPTS){
 				expandCluster(i,curClust,nbhd);
 				curClust++;
 			}
@@ -151,9 +166,10 @@ void expandCluster(int p_idx,int curCluster,set<int> &nbhd){
 		if(!pts[idx].visited){
 			cout << "	Expanding inner cluster at:" << setw(6) << idx << " Remaining:" << setw(6) << nbhd.size() << endl;
 			pts[idx].visited=true;
-			set<int> nbhd_tmp = regionQuery(idx);
-			if(nbhd_tmp.size()>minPTS)
+			if(pts[idx].nbhds>minPTS){
+				set<int> nbhd_tmp = regionQuery(idx);
 				nbhd.insert(nbhd_tmp.begin(),nbhd_tmp.end());		
+			}
 		}
 		if(pts[idx].cluster==-1)
 			pts[idx].cluster=curCluster;
