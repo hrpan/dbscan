@@ -30,7 +30,7 @@ struct Point{
 vector<Point> pts;
 
 float measure(Point &p1, Point &p2);
-set<int> regionQuery(int p_idx);
+void regionQuery(int p_idx);
 
 int main(){
 	TFile *f = new TFile(inputFileName,"READ");
