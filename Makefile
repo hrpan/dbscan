@@ -1,8 +1,9 @@
+VPATH=src
 all: dbscan prescan
 dbscan: dbscan.cc
-	g++ -O2 -g -o dbscan dbscan.cc -lEG `root-config --cflags` `root-config --libs` -lTreePlayer
+	g++ -O2 -o $@ $< -lEG `root-config --cflags --libs`
 prescan: prescan.cc
-	g++ -O2 -g -o prescan prescan.cc -lEG `root-config --cflags` `root-config --libs` -lTreePlayer
+	g++ -O2 -o $@ $< -lEG `root-config --cflags --libs`
 clean:
 	rm ./*~ ./*.o ./main
 
