@@ -19,13 +19,11 @@ const double eps=0.5;
 const int minPTS=500;
 
 const TString inputFileName = "../../data/reducedibd.root";
-const TString outputFileName = TString::Format("./output/out%d.root",minPTS);
+const TString outputFileName = TString::Format("./output/prescan.root");
 
 struct Point{
 	float x[nComp];
-	bool visited;
 	int nbhds;
-	int cluster;
 	float mindist;
 };
 
@@ -33,7 +31,6 @@ vector<Point> pts;
 
 float measure(Point &p1, Point &p2);
 set<int> regionQuery(int p_idx);
-void expandCluster(int p_idx,int curCluster,set<int> &nbhd);
 
 int main(){
 	TFile *f = new TFile(inputFileName,"READ");
@@ -42,10 +39,9 @@ int main(){
 	TFile *fout = new TFile(outputFileName,"RECREATE");
 	TTree *tr_out = new TTree("out","out");
 
-	int cluster,nbhds;
+	int nbhds;
 	float mindist;
 
-	TBranch *cluster_br = tr_out->Branch("cluster",&cluster);
 	TBranch *nbhd_br = tr_out->Branch("nbhd",&nbhds);
 	TBranch *mindist_br = tr_out->Branch("mindist",&mindist);
 
@@ -91,19 +87,12 @@ int main(){
 	for(int i=0;i<n;++i){
 		if(i%2000==0)
 			cout << "DBSCAN PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
-		if(!pts[i].visited){
-			pts[i].visited=1;
-			set<int> nbhd = regionQuery(i);
-			//cout << "	NEIGHBORHOODS:" << nb << endl;
-			if(nbhd.size()>minPTS){
-				expandCluster(i,curClust,nbhd);
-				curClust++;
-			}
-		}
+		regionQuery(i);
+		//cout << "	NEIGHBORHOODS:" << nb << endl;
+		
 	}	
 	
 	for(int i=0;i<n;++i){
-		cluster=pts[i].cluster;
 		nbhds=pts[i].nbhds;
 		mindist=pts[i].mindist;
 		tr_out->Fill();
@@ -121,7 +110,7 @@ float measure(Point &p1,Point &p2){
 	return sqrt(dist);	
 }
 
-set<int> regionQuery(int p_idx){
+void regionQuery(int p_idx){
 	
 	int n = pts.size();
 
@@ -136,28 +125,6 @@ set<int> regionQuery(int p_idx){
 			nbhd.insert(i);
 	}
 	pts[p_idx].nbhds=nbhd.size();
-	return nbhd;
 }
 
-void expandCluster(int p_idx,int curCluster,set<int> &nbhd){
-	
-	cout << "Expanding cluster at:" << p_idx << "... (this is going to take forever)" << endl;
-
-	pts[p_idx].cluster=curCluster;
-
-	while(!nbhd.empty()){
-		set<int>::iterator it = nbhd.begin();
-		int idx = *it;
-		if(!pts[idx].visited){
-			cout << "	Expanding inner cluster at:" << setw(6) << idx << " Remaining:" << setw(6) << nbhd.size() << endl;
-			pts[idx].visited=true;
-			set<int> nbhd_tmp = regionQuery(idx);
-			if(nbhd_tmp.size()>minPTS)
-				nbhd.insert(nbhd_tmp.begin(),nbhd_tmp.end());		
-		}
-		if(pts[idx].cluster==-1)
-			pts[idx].cluster=curCluster;
-		nbhd.erase(it);
-	}
-}
 	
