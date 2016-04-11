@@ -19,7 +19,7 @@ const double eps=0.5;
 const int minPTS=500;
 
 const TString inputFileName = "../../data/reducedibd.root";
-const TString outputFileName = TString::Format("./output/out%d.root",minPTS);
+const TString outputFileName = TString::Format("./output/dbscan/out%d.root",minPTS);
 
 struct Point{
 	float x[nComp];
