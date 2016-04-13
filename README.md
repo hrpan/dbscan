@@ -24,6 +24,12 @@ The input file should be placed at ./input/input
 With the ordering `nComp` `eps` `minPTS` and names of the `TBranch`
 
 ####Example input file
+intput.root intputTree
+
+
+output.root outputTree
+
+
 3
 0.1
 100
