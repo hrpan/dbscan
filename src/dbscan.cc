@@ -6,32 +6,34 @@
 #include<iostream>
 #include<iomanip>
 #include<set>
+#include<string>
+#include<fstream>
 using namespace std;
-
-
-const int nComp=4;
-
-double mean[nComp],var[nComp];
-
-const double eps=0.3;
-const int minPTS=500;
 
 const TString inputFileName = "../../data/reducedibd.root";
 const TString outputFileName = "./output/dbscan/out.root";
 const TString prescanFileName = "./output/prescan/prescan.root";
+const string argFileName = "./input/input";
 
 struct Point{
-	float x[nComp];
+	vector<float> x;
 	bool visited;
 	int nbhds;
 	int cluster;
 };
+
+int nComp;
+double eps;
+int minPTS;
+
+vector<double> mean,var;
 
 vector<Point> pts;
 
 float measure(Point &p1, Point &p2);
 set<int> regionQuery(int p_idx);
 void expandCluster(int p_idx,int curCluster,set<int> &nbhd);
+void setTree(TTree *tr,float *tmp);
 
 int main(){
 	TFile *f = new TFile(inputFileName,"READ");
@@ -39,24 +41,32 @@ int main(){
 	TFile *fout = new TFile(outputFileName,"RECREATE");
 	TTree *tr_out = new TTree("out","out");
 
+	ifstream ifile(argFileName.c_str());
+
+	ifile >> nComp >> eps >> minPTS;
+	cout << "Number of components: " << nComp << endl;
+	cout << "EPS: " << eps << "	minPTS: " << minPTS << endl;
+ 	vector<float> tmp(nComp,0);
+	for(int i=0;i<nComp;++i){
+		mean.push_back(0);
+		var.push_back(0);
+		string varStr;
+		ifile >> varStr;
+		tr->SetBranchAddress(varStr.c_str(),&(*(tmp.begin()+i)));
+		cout << "INPUT VARIABLE" << i+1 << ": " << varStr << endl; 
+	}
+
 	int cluster,nbhds;
 
-	TBranch *cluster_br = tr_out->Branch("cluster",&cluster);
-	TBranch *nbhd_br = tr_out->Branch("nbhd",&nbhds);
-
-	float tmp[nComp];
-
-	tr->SetBranchAddress("dist",tmp);
-	tr->SetBranchAddress("ep",tmp+1);
-	tr->SetBranchAddress("ed",tmp+2);
-	tr->SetBranchAddress("dt",tmp+3);
+	tr_out->Branch("cluster",&cluster);
+	tr_out->Branch("nbhd",&nbhds);
 
 
 	int n = tr->GetEntries();
 	cout << "TOTAL EVTS:" << n << endl;
 
-	double sum[nComp]={};
-	double sumsq[nComp]={};
+	vector<float> sum(nComp,0);
+	vector<float> sumsq(nComp,0);
 
 	for(int i=0;i<n;++i){
 		if(i%200000==0)
@@ -64,7 +74,7 @@ int main(){
 		tr->GetEntry(i);
 		Point p_tmp;
 		for(int j=0;j<nComp;++j){
-			p_tmp.x[j]=tmp[j];
+			p_tmp.x.push_back(tmp[j]);
 			sum[j]+=tmp[j];
 			sumsq[j]+=tmp[j]*tmp[j];
 		}
