@@ -3,7 +3,7 @@
 ##What is this?
 
 This is an implementation of Density-based spatial clustering of applications with noise (DBSCAN) used to analyze ROOT data files.
-For detail about DBSCAN, please check https://en.wikipedia.org/wiki/DBSCAN
+For details about DBSCAN, please check https://en.wikipedia.org/wiki/DBSCAN
 
 
 ##How to use this?
@@ -21,7 +21,7 @@ now requires an input file specifying the number of variables and their `TBranch
 
 ###Input format
 The input file should be placed at ./input/input
-With the ordering `nComp` `eps` `minPTS` and names of the `TBranch`
+With input/output `TFile`/`TTree` names `nComp` `eps` `minPTS` and names of the `TBranch`
 
 ####Example input file
 intput.root intputTree
