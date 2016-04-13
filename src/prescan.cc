@@ -78,15 +78,12 @@ int main(){
 	}
 	
 
-	int curClust=1;
 
 
-	double mean_mindist=0;
 	for(int i=0;i<n;++i){
 		if(i%2000==0)
 			cout << "PRESCAN DIST PROGRESS:"  << setprecision(4) << float(i)*100/n << "%" << endl;
 		distScan(i);
-		mean_mindist+=pts[i].mindist;
 	}
 
 		
