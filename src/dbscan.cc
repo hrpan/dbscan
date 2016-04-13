@@ -10,9 +10,8 @@
 #include<fstream>
 using namespace std;
 
-const TString inputFileName = "../../data/reducedibd.root";
-const TString outputFileName = "./output/dbscan/out.root";
-const TString prescanFileName = "./output/prescan/prescan.root";
+//const TString inputFileName = "../../data/reducedibd.root";
+//const TString outputFileName = "./output/dbscan/out.root";
 const string argFileName = "./input/input";
 
 struct Point{
@@ -20,6 +19,7 @@ struct Point{
 	bool visited;
 	int nbhds;
 	int cluster;
+	float mindist;
 };
 
 int nComp;
@@ -33,20 +33,18 @@ vector<Point> pts;
 float measure(Point &p1, Point &p2);
 set<int> regionQuery(int p_idx);
 void expandCluster(int p_idx,int curCluster,set<int> &nbhd);
-void setupVariables(vector<float> &tmp,TTree *tr);
+void setup(vector<float> &tmp,TFile **f,TTree **tr,TFile **fout,TTree **tr_out);
 
 
 int main(){
-	TFile *f = new TFile(inputFileName,"READ");
-	TTree *tr = (TTree*)f->Get("ibdred");
-	TFile *fout = new TFile(outputFileName,"RECREATE");
-	TTree *tr_out = new TTree("out","out");
+	TFile *f,*fout;
+	TTree *tr,*tr_out;
 
 	vector<float> tmp;
-	setupVariables(tmp,tr);
+	setup(tmp,&f,&tr,&fout,&tr_out);
+	cout << "SETUP COMPLETE" << endl;
 
 	int cluster,nbhds;
-
 	tr_out->Branch("cluster",&cluster);
 	tr_out->Branch("nbhd",&nbhds);
 
@@ -69,6 +67,7 @@ int main(){
 		}
 		p_tmp.visited=false;
 		p_tmp.cluster=-1;
+		p_tmp.mindist=999;
 		pts.push_back(p_tmp);
 	}
 	f->Close();
@@ -107,8 +106,23 @@ int main(){
 	fout->Close();
 }
 
-void setupVariables(vector<float> &tmp, TTree *tr){
+void setup(vector<float> &tmp,TFile **f,TTree **tr,TFile **fout,TTree **tr_out){
 	ifstream ifile(argFileName.c_str());
+
+	TString inputFileName,inputTreeName;
+	ifile >> inputFileName >> inputTreeName;
+	*f = new TFile(inputFileName,"READ");
+	*tr = (TTree*)((*f)->Get(inputTreeName));
+	cout << "INPUT FILE: " << inputFileName << endl;
+	cout << "INPUT TREE: " << inputTreeName << endl;
+
+	TString outputFileName,outputTreeName;
+	ifile >> outputFileName >> outputTreeName;
+	*fout = new TFile(outputFileName,"RECREATE");
+	*tr_out = new TTree(outputTreeName,outputTreeName);
+	cout << "OUTPUT FILE: " << outputFileName << endl;
+	cout << "OUTPUT TREE: " << outputTreeName << endl;
+
 	ifile >> nComp >> eps >> minPTS;
 	cout << "Number of components: " << nComp << endl;
 	cout << "EPS: " << eps << "	minPTS: " << minPTS << endl;
@@ -119,7 +133,7 @@ void setupVariables(vector<float> &tmp, TTree *tr){
 	for(int i=0;i<nComp;++i){
 		string varStr;
 		ifile >> varStr;
-		tr->SetBranchAddress(varStr.c_str(),&(*(tmp.begin()+i)));
+		(*tr)->SetBranchAddress(varStr.c_str(),&(*(tmp.begin()+i)));
 		cout << "SETTING INPUT VARIABLE" << i+1 << ": " << varStr << endl; 
 	}
 
@@ -146,6 +160,7 @@ set<int> regionQuery(int p_idx){
 		float dist = measure(pts[p_idx],pts[i]);
 		if(measure(pts[p_idx],pts[i])<eps)
 			nbhd.insert(i);
+		pts[p_idx].mindist=min(dist,pts[p_idx].mindist);
 	}
 	pts[p_idx].nbhds=nbhd.size();
 	return nbhd;
