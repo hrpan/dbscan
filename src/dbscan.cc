@@ -45,9 +45,10 @@ int main(){
 	cout << "SETUP COMPLETE" << endl;
 
 	int cluster,nbhds;
+	float mindist;
 	tr_out->Branch("cluster",&cluster);
 	tr_out->Branch("nbhd",&nbhds);
-
+	tr_out->Branch("mindist",&mindist);
 
 	int n = tr->GetEntries();
 	cout << "TOTAL EVTS:" << n << endl;
@@ -99,6 +100,7 @@ int main(){
 	for(int i=0;i<n;++i){
 		cluster=pts[i].cluster;
 		nbhds=pts[i].nbhds;
+		mindist=pts[i].mindist;
 		tr_out->Fill();
 	}
  
