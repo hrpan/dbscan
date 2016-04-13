@@ -14,7 +14,6 @@ const int nComp=4;
 
 double mean[nComp],var[nComp];
 
-double eps=0.5;
 //~0.2% N
 
 const TString inputFileName = "../../data/reducedibd.root";

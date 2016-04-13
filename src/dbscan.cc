@@ -33,7 +33,8 @@ vector<Point> pts;
 float measure(Point &p1, Point &p2);
 set<int> regionQuery(int p_idx);
 void expandCluster(int p_idx,int curCluster,set<int> &nbhd);
-void setTree(TTree *tr,float *tmp);
+void setupVariables(vector<float> &tmp,TTree *tr);
+
 
 int main(){
 	TFile *f = new TFile(inputFileName,"READ");
@@ -41,20 +42,8 @@ int main(){
 	TFile *fout = new TFile(outputFileName,"RECREATE");
 	TTree *tr_out = new TTree("out","out");
 
-	ifstream ifile(argFileName.c_str());
-
-	ifile >> nComp >> eps >> minPTS;
-	cout << "Number of components: " << nComp << endl;
-	cout << "EPS: " << eps << "	minPTS: " << minPTS << endl;
- 	vector<float> tmp(nComp,0);
-	for(int i=0;i<nComp;++i){
-		mean.push_back(0);
-		var.push_back(0);
-		string varStr;
-		ifile >> varStr;
-		tr->SetBranchAddress(varStr.c_str(),&(*(tmp.begin()+i)));
-		cout << "INPUT VARIABLE" << i+1 << ": " << varStr << endl; 
-	}
+	vector<float> tmp;
+	setupVariables(tmp,tr);
 
 	int cluster,nbhds;
 
@@ -116,6 +105,25 @@ int main(){
  
 	fout->Write();
 	fout->Close();
+}
+
+void setupVariables(vector<float> &tmp, TTree *tr){
+	ifstream ifile(argFileName.c_str());
+	ifile >> nComp >> eps >> minPTS;
+	cout << "Number of components: " << nComp << endl;
+	cout << "EPS: " << eps << "	minPTS: " << minPTS << endl;
+
+	tmp.resize(nComp,0);
+	mean.resize(nComp,0);
+	var.resize(nComp,0);
+	for(int i=0;i<nComp;++i){
+		string varStr;
+		ifile >> varStr;
+		tr->SetBranchAddress(varStr.c_str(),&(*(tmp.begin()+i)));
+		cout << "SETTING INPUT VARIABLE" << i+1 << ": " << varStr << endl; 
+	}
+
+
 }
 
 
